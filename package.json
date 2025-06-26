@@ -1,0 +1,27 @@
+{
+  "name": "meet-me",
+  "version": "1.0.0",
+  "description": "Full-stack video and audi calling application",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon backend/app.js",
+    "client": "npm dev --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "author": "Milad Nouri",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.2",
+    "multer": "^2.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "dotenv": "^16.4.7",
+    "nodemon": "^3.1.9"
+  }
+}
