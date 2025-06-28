@@ -8,14 +8,21 @@ import { ModeToggle } from "./components/mode-toggle";
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/register", element: <Register /> },
+  {
+    path: "/",
+    // element: <RootLayout />,
+    children: [
+      { index: true, element: <HomePage /> }, // index: true is alternative to path: ""
+    ],
+  },
 ]);
 
 function App() {
   return (
     <>
-      <div className="relative flex justify-end w-full top-12 right-6 md:right-12">
+      {/* <div className="relative flex justify-end w-full top-12 right-6 md:right-12">
       <ModeToggle />
-      </div>
+      </div> */}
       <RouterProvider router={router} />
     </>
   );
