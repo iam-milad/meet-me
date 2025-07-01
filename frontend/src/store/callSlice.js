@@ -1,4 +1,3 @@
-// features/call/callSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import { callState } from "../lib/socket/constants";
 
@@ -32,10 +31,7 @@ const callSlice = createSlice({
     },
     setCallState: (state, action) => {
       state.callState = action.payload;
-    },
-    setAllowConnectionsFromStrangers: (state, action) => {
-      state.allowConnectionsFromStrangers = action.payload;
-    },
+    }
   },
 });
 
