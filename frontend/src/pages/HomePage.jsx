@@ -4,9 +4,9 @@ import { FaVideo } from "react-icons/fa";
 import { MdCall } from "react-icons/md";
 import { MdCallEnd } from "react-icons/md";
 import { Label } from "@/components/ui/label";
-import { FaPhone } from "react-icons/fa";
-import { BsCopy } from "react-icons/bs";
-
+import { IoIosChatbubbles } from "react-icons/io";
+import { PiCopyLight } from "react-icons/pi";
+import { CiCircleCheck } from "react-icons/ci";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
@@ -22,23 +22,38 @@ import {
 } from "@/components/ui/dialog";
 import { CallingDialog } from "../components/CallingDialog";
 import { io } from "socket.io-client";
-import { registerSocketEvents } from "../lib/socket/wss.js"; 
-import { useEffect } from "react";
+import { registerSocketEvents } from "../lib/socket/wss.js";
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
-const socket = io("http://localhost:8080"); 
+import { sendPreOffer } from "../lib/socket/webRTCHandler.js";
+
+const socket = io("http://localhost:8080");
 
 const HomePage = () => {
+  const dispatch = useDispatch();
+  const socketId = useSelector((state) => state.call.socketId);
+  const [personalCodeCopied, setPersonalCodeCopied] = useState(false);
 
-    useEffect(() => {
-    
-        registerSocketEvents(socket);
-    
-        // return () => {
-        //   socket.disconnect();
-        // };
-      }, []);
+  useEffect(() => {
+    registerSocketEvents(socket, dispatch);
+
+    // return () => {
+    //   socket.disconnect();
+    // };
+  }, [dispatch]);
 
   const incomingCall = true;
+
+  const copyPersonalCodeHandler = () => {
+    navigator.clipboard && navigator.clipboard.writeText(socketId);
+    setPersonalCodeCopied(true);
+    setTimeout(() => setPersonalCodeCopied(false), 2000);
+  };
+
+  const sendPreOfferHandler = () => {
+    sendPreOffer();
+  };
 
   return (
     <main className="main-container h-screen grid grid-cols-[20%_60%_20%]">
@@ -58,14 +73,15 @@ const HomePage = () => {
         </p>
         <div className="text-gray-100 rounded-xl px-6 py-4 mt-3 bg-white/20 ring-1 ring-black/5">
           <p className="mb-3">Your personal code</p>
-          <div className="flex justify-between">
-            <p className="text-xl font-bold">g45h3h543g5</p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <p className="text-md font-bold">{socketId}</p>
             <button
               size="icon"
               type="button"
               className="bg-white text-gray-800 font-bold cursor-pointer p-2 rounded-md"
+              onClick={copyPersonalCodeHandler}
             >
-              <BsCopy />
+              {personalCodeCopied ? <CiCircleCheck /> : <PiCopyLight />}
             </button>
           </div>
         </div>
@@ -85,11 +101,21 @@ const HomePage = () => {
             size="lg"
             type="button"
             className="flex-1 truncate cursor-pointer"
+            onClick={sendPreOfferHandler}
           >
-            <FaPhone /> Call
+            <IoIosChatbubbles /> Chat
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            type="button"
+            className="flex-1 truncate cursor-pointer"
+            onClick={sendPreOfferHandler}
+          >
+            <FaVideo /> Video Call
           </Button>
 
-          <CallingDialog
+          {/* <CallingDialog
             title={incomingCall ? "Incoming Call" : "Calling"}
             avatarImg="https://github.com/shadcn.png"
             name="Milad Nouri"
@@ -139,7 +165,7 @@ const HomePage = () => {
                 </DialogFooter>
               )
             }
-          />
+          /> */}
         </div>
       </section>
 
@@ -171,32 +197,44 @@ const HomePage = () => {
           </Carousel>
         </div>
         <div className="videos-container bg-gray-50 h-full">
-          <div className="hidden items-center justify-center h-full">
-            <img className="w-[300px]" src="public/images/logo.png"></img>
+          <div className="flex items-center justify-center h-full">
+            <img className="w-[300px]" src="images/logo.png"></img>
           </div>
           <video
-            className="remote_video w-full h-full bg-amber-300"
+            className="hidden remote_video w-full h-full bg-amber-300"
             muted
             autoPlay
           ></video>
-          <div className="call_buttons_container absolute w-[395px] h-[75px] bottom-[40px] left-[calc(50%-200px)] flex justify-between items-center">
-            <button className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center" id="mic_button">
-              <img src="public/images/mic.png" id="mic_button_image"></img>
+          <div className="hidden call_buttons_container absolute w-[395px] h-[75px] bottom-[40px] left-[calc(50%-200px)] justify-between items-center">
+            <button
+              className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center"
+              id="mic_button"
+            >
+              <img src="images/mic.png" id="mic_button_image"></img>
             </button>
-            <button className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center" id="camera_button">
-              <img
-                src="public/images/camera.png"
-                id="camera_button_image"
-              ></img>
+            <button
+              className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center"
+              id="camera_button"
+            >
+              <img src="images/camera.png" id="camera_button_image"></img>
             </button>
-            <button className="w-[75px] h-[75px] rounded-[75px] bg-[#fc5d5b] transition duration-300 flex justify-center items-center" id="hang_up_button">
-              <img src="public/images/hangUp.png"></img>
+            <button
+              className="w-[75px] h-[75px] rounded-[75px] bg-[#fc5d5b] transition duration-300 flex justify-center items-center"
+              id="hang_up_button"
+            >
+              <img src="images/hangUp.png"></img>
             </button>
-            <button className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center" id="screen_sharing_button">
-              <img src="public/images/switchCameraScreenSharing.png"></img>
+            <button
+              className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center"
+              id="screen_sharing_button"
+            >
+              <img src="images/switchCameraScreenSharing.png"></img>
             </button>
-            <button className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center" id="start_recording_button">
-              <img src="public/images/recordingStart.png"></img>
+            <button
+              className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center"
+              id="start_recording_button"
+            >
+              <img src="images/recordingStart.png"></img>
             </button>
           </div>
           <div
@@ -204,7 +242,7 @@ const HomePage = () => {
             id="finish_chat_button_container"
           >
             <button className="call_button_large" id="finish_chat_call_button">
-              <img src="public/images/hangUp.png"></img>
+              <img src="images/hangUp.png"></img>
             </button>
           </div>
           <div
