@@ -1,12 +1,19 @@
 import { setSocketId } from "../../store/callSlice";
+import * as webRTCHandler from "./webRTCHandler";
 
 let socketIO = null;
 
 export const registerSocketEvents = (socket, dispatch) => {
-  socketIO = socket;
-
   socket.on("connect", () => {
-    console.log(socket.id);
+    socketIO = socket;
     dispatch(setSocketId(socket.id));
   });
+
+  socket.on("pre-offer", (data) => {
+    webRTCHandler.handlePreOffer(data);
+  });
+};
+
+export const sendPreOffer = (data) => {
+  socketIO.emit("pre-offer", data);
 };

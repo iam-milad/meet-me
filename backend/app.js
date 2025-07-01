@@ -17,12 +17,11 @@ const app = express();
 import { Server } from "socket.io";
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST"],
-      },
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
 });
-
 
 // body parser middleware
 app.use(express.json());
@@ -44,18 +43,37 @@ app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 let connectedUsers = [];
 
 io.on("connection", (socket) => {
-    connectedUsers.push(socket.id);
-
+  connectedUsers.push(socket.id);
   console.log("Connected Users: ", connectedUsers);
+
+  socket.on("pre-offer", (data) => {
+    const { calleePersonalCode, callType } = data;
+    const connectedUser = connectedUsers.find(
+      (userSocketId) => userSocketId === calleePersonalCode
+    );
+
+    if (connectedUser) {
+      const data = {
+        callerSocketId: socket.id,
+        callType,
+      };
+      io.to(calleePersonalCode).emit("pre-offer", data);
+    } else {
+      const data = {
+        preOfferAnswer: "CALLEE_NOT_FOUND",
+      };
+      io.to(socket.id).emit("pre-offer-answer", data);
+    }
+  });
 
   socket.on("disconnect", () => {
     const newConnectedUsers = connectedUsers.filter((peerSocketId) => {
-        return peerSocketId !== socket.id;
+      return peerSocketId !== socket.id;
     });
-  
-      connectedUsers = newConnectedUsers;
 
-      console.log("new users after disconnection", connectedUsers);
+    connectedUsers = newConnectedUsers;
+
+    console.log("new users after disconnection", connectedUsers);
   });
 });
 

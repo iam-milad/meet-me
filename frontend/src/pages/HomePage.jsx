@@ -27,6 +27,7 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
 import { sendPreOffer } from "../lib/socket/webRTCHandler.js";
+import { callType } from "../lib/socket/constants.js";
 
 const socket = io("http://localhost:8080");
 
@@ -34,13 +35,15 @@ const HomePage = () => {
   const dispatch = useDispatch();
   const socketId = useSelector((state) => state.call.socketId);
   const [personalCodeCopied, setPersonalCodeCopied] = useState(false);
+  const [personalCode, setPersonalCode] = useState("");
 
   useEffect(() => {
     registerSocketEvents(socket, dispatch);
 
-    // return () => {
+    return () => {
     //   socket.disconnect();
-    // };
+        socket.off("pre-offer");
+    };
   }, [dispatch]);
 
   const incomingCall = true;
@@ -51,8 +54,8 @@ const HomePage = () => {
     setTimeout(() => setPersonalCodeCopied(false), 2000);
   };
 
-  const sendPreOfferHandler = () => {
-    sendPreOffer();
+  const sendPreOfferHandler = (callType) => {
+    sendPreOffer(callType, personalCode);
   };
 
   return (
@@ -92,6 +95,7 @@ const HomePage = () => {
             id="personal-code"
             type="text"
             className="bg-white/20 ring-1 ring-black/5 rounded-sm text-gray-100 p-2 px-3"
+            onChange={(e) => setPersonalCode(e.target.value)}
           />
         </div>
 
@@ -101,7 +105,7 @@ const HomePage = () => {
             size="lg"
             type="button"
             className="flex-1 truncate cursor-pointer"
-            onClick={sendPreOfferHandler}
+            onClick={() => sendPreOfferHandler(callType.CHAT_PERSONAL_CODE)}
           >
             <IoIosChatbubbles /> Chat
           </Button>
@@ -110,7 +114,7 @@ const HomePage = () => {
             size="lg"
             type="button"
             className="flex-1 truncate cursor-pointer"
-            onClick={sendPreOfferHandler}
+            onClick={() => sendPreOfferHandler(callType.VIDEO_PERSONAL_CODE)}
           >
             <FaVideo /> Video Call
           </Button>
