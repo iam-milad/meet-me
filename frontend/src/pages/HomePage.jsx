@@ -25,9 +25,10 @@ import { io } from "socket.io-client";
 import { registerSocketEvents } from "../lib/socket/wss.js";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { setDialog } from "../store/callSlice";
 
 import { sendPreOffer } from "../lib/socket/webRTCHandler.js";
-import { callType } from "../lib/socket/constants.js";
+import { callType, dialogTypes } from "../lib/socket/constants.js";
 
 const socket = io("http://localhost:8080");
 
@@ -41,12 +42,10 @@ const HomePage = () => {
     registerSocketEvents(socket, dispatch);
 
     return () => {
-    //   socket.disconnect();
-        socket.off("pre-offer");
+      //   socket.disconnect();
+      socket.off("pre-offer");
     };
   }, [dispatch]);
-
-  const incomingCall = true;
 
   const copyPersonalCodeHandler = () => {
     navigator.clipboard && navigator.clipboard.writeText(socketId);
@@ -55,6 +54,11 @@ const HomePage = () => {
   };
 
   const sendPreOfferHandler = (callType) => {
+    dispatch(setDialog({
+      show: true,
+      type: dialogTypes.CALLER_DIALOG,
+      title: "Calling ",
+    }));
     sendPreOffer(callType, personalCode);
   };
 
@@ -118,58 +122,7 @@ const HomePage = () => {
           >
             <FaVideo /> Video Call
           </Button>
-
-          {/* <CallingDialog
-            title={incomingCall ? "Incoming Call" : "Calling"}
-            avatarImg="https://github.com/shadcn.png"
-            name="Milad Nouri"
-            triggerBtn={
-              <DialogTrigger
-                variant="outline"
-                size="lg"
-                type="button"
-                className="flex-1 truncate cursor-pointer"
-                asChild
-              >
-                <Button variant="outline">
-                  <FaVideo /> Video Call
-                </Button>
-              </DialogTrigger>
-            }
-            footer={
-              incomingCall ? (
-                <DialogFooter className="!justify-center">
-                  <DialogClose asChild>
-                    <Button
-                      className="bg-blue-500 text-white hover:bg-blue-600 hover:text-white cursor-pointer"
-                      variant="outline"
-                    >
-                      <MdCall /> Accept
-                    </Button>
-                  </DialogClose>
-                  <DialogClose asChild>
-                    <Button
-                      className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
-                      variant="outline"
-                    >
-                      <MdCallEnd /> Reject
-                    </Button>
-                  </DialogClose>
-                </DialogFooter>
-              ) : (
-                <DialogFooter className="!justify-center">
-                  <DialogClose asChild>
-                    <Button
-                      className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
-                      variant="outline"
-                    >
-                      <FaVideo /> Cancel Call
-                    </Button>
-                  </DialogClose>
-                </DialogFooter>
-              )
-            }
-          /> */}
+          <CallingDialog />
         </div>
       </section>
 

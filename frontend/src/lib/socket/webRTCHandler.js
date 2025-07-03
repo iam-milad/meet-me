@@ -1,5 +1,6 @@
 import * as wss from "./wss";
 import * as constants from "./constants";
+import { setDialog } from "../../store/callSlice"; 
 
 let connectedUserDetails;
 
@@ -12,7 +13,7 @@ export const sendPreOffer = (callType, calleePersonalCode) => {
   wss.sendPreOffer(data);
 };
 
-export const handlePreOffer = (data) => {
+export const handlePreOffer = (data, dispatch) => {
   const { callType, callerSocketId } = data;
 
   connectedUserDetails = {
@@ -24,6 +25,10 @@ export const handlePreOffer = (data) => {
     callType === constants.callType.CHAT_PERSONAL_CODE ||
     callType === constants.callType.VIDEO_PERSONAL_CODE
   ) {
-    // update the state to show calling dialog
+    dispatch(setDialog({ 
+      show: true,
+      type: constants.dialogTypes.CALLEE_DIALOG,
+      title: callType === constants.callType.CHAT_PERSONAL_CODE ? "Incoming Chat Call" : "Incoming Video Call"
+     }));
   }
 };
