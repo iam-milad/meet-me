@@ -25,4 +25,5 @@ export const callState = {
 export const dialogTypes = {
   CALLER_DIALOG: "CALLER_DIALOG",
   CALLEE_DIALOG: "CALLEE_DIALOG",
+  CALLER_REJECTION_DIALOG: "CALLER_REJECTION_DIALOG",
 };

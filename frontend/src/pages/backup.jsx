@@ -23,7 +23,7 @@ import {
 import { CallingDialog } from "../components/CallingDialog";
 import LocalVideo from "../components/LocalVideo.jsx";
 import { io } from "socket.io-client";
-import { registerSocketEvents } from "../lib/socket/wss.js";
+import * as wss from "../lib/socket/wss.js";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setDialog } from "../store/callSlice";
@@ -42,16 +42,12 @@ const HomePage = () => {
   const socketId = useSelector((state) => state.call.socketId);
   const callState = useSelector((state) => state.call.callState);
   const remoteStream = useSelector((state) => state.call.remoteStream);
-  const screenSharingActive = useSelector((state) => state.call.screenSharingActive);
   const [personalCodeCopied, setPersonalCodeCopied] = useState(false);
   const [personalCode, setPersonalCode] = useState("");
   const [localStream, setLocalStream] = useState("");
 
 
   useEffect(() => {
-    console.log("outside of hook")
-    registerSocketEvents(socket, dispatch);
-
     let activeStream; // created this extra var to avoid passing localStream to dependency array
     navigator.mediaDevices
       .getUserMedia(defaultConstraints)
@@ -68,11 +64,22 @@ const HomePage = () => {
     return () => {
       //   socket.disconnect();
       socket.off("pre-offer");
-      socket.off('webRTC-signaling'); 
       // Clean up the stream if it exists
       if (activeStream) {
         activeStream.getTracks().forEach((track) => track.stop());
       }
+    };
+  }, [dispatch]);
+
+  console.log("outside of hook")
+  useEffect(() => {
+    console.log("inside of hook");
+    webRTCHandler.setWebSocketService(wss);
+    wss.registerSocketEvents(socket, dispatch);
+  
+    // Cleanup: remove listeners to avoid duplicates
+    return () => {
+      socket.off('webRTC-signaling'); // Remove all 'webRTC-signaling' listeners
     };
   }, [dispatch]);
 
@@ -94,12 +101,8 @@ const HomePage = () => {
     webRTCHandler.sendPreOffer(callType, personalCode);
   };
 
-  const switchBetweenCameraAndScreenSharingHandler = () => {
-    webRTCHandler.switchBetweenCameraAndScreenSharing(screenSharingActive);
-  }
-
-  const hangUpHandler = () => {
-    webRTCHandler.handleHangUp();
+  const acceptCallHandler = () => {
+    webRTCHandler.acceptCallHandler(localStream);
   }
 
   return (
@@ -166,7 +169,7 @@ const HomePage = () => {
           >
             <FaVideo /> Video Call
           </Button>
-          <CallingDialog />
+          <CallingDialog handleAcceptCall={acceptCallHandler} />
         </div>
       </section>
 
@@ -196,15 +199,16 @@ const HomePage = () => {
             <CarouselNext />
           </Carousel>
         </div>
-        {/* callState === constants.callState.CALL_AVAILABLE  */}
         <div className="videos-container bg-gray-50 h-full">
+          {callState === constants.callState.CALL_AVAILABLE ? (
             <div className="h-full">
-              <video
-                id="remote_video"
-                className="w-full h-full"
+              <LocalVideo stream={remoteStream}/>
+              {/* <video
+                srcObject={remoteStream}
+                className="w-full h-full bg-amber-300"
                 muted
                 autoPlay
-              ></video>
+              ></video> */}
               <div className="flex call_buttons_container absolute w-[395px] h-[75px] bottom-[40px] left-[calc(50%-200px)] justify-between items-center">
                 <button
                   className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center"
@@ -221,14 +225,12 @@ const HomePage = () => {
                 <button
                   className="w-[75px] h-[75px] rounded-[75px] bg-[#fc5d5b] transition duration-300 flex justify-center items-center"
                   id="hang_up_button"
-                  onClick={hangUpHandler}
                 >
                   <img src="images/hangUp.png"></img>
                 </button>
                 <button
                   className="w-[50px] h-[50px] bg-[rgba(0,0,0,0.2)] rounded-[50px] transition duration-300 flex justify-center items-center"
                   id="screen_sharing_button"
-                  onClick={switchBetweenCameraAndScreenSharingHandler}
                 >
                   <img src="images/switchCameraScreenSharing.png"></img>
                 </button>
@@ -263,11 +265,11 @@ const HomePage = () => {
                 <button id="stop_recording_button">Stop recording</button>
               </div>
             </div>
-
-
-            // <div className="flex items-center justify-center h-full w-full">
-            // <img className="w-[300px]" src="images/logo.png"></img>
-            // </div>
+          ) : (
+            <div className="flex items-center justify-center h-full w-full">
+              <img className="w-[300px]" src="images/logo.png"></img>
+            </div>
+          )}
         </div>
       </section>
 

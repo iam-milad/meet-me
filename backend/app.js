@@ -46,8 +46,7 @@ io.on("connection", (socket) => {
   connectedUsers.push(socket.id);
   console.log("Connected Users: ", connectedUsers);
 
-  socket.on("pre-offer", (data) => {
-    const { calleePersonalCode, callType } = data;
+  socket.on("pre-offer", ({calleePersonalCode, callType}) => {
     const connectedUser = connectedUsers.find(
       (userSocketId) => userSocketId === calleePersonalCode
     );
@@ -63,6 +62,42 @@ io.on("connection", (socket) => {
         preOfferAnswer: "CALLEE_NOT_FOUND",
       };
       io.to(socket.id).emit("pre-offer-answer", data);
+    }
+  });
+
+  socket.on("pre-offer-answer", (data) => {
+    const { callerSocketId } = data;
+    const connectedUser = connectedUsers.find(
+      (userSocketId) => userSocketId === callerSocketId
+    );
+
+    if (connectedUser) {
+      console.log("pre-offer-answer on server");
+      io.to(data.callerSocketId).emit("pre-offer-answer", data);
+    }
+  });
+
+  socket.on("webRTC-signaling", (data) => {
+    const { connectedUserSocketId } = data;
+
+    const connectedUser = connectedUsers.find(
+      (peerSocketId) => peerSocketId === connectedUserSocketId
+    );
+
+    if (connectedUser) {
+      io.to(connectedUserSocketId).emit("webRTC-signaling", data);
+    }
+  });
+
+  socket.on("user-hanged-up", (data) => {
+    const { connectedUserSocketId } = data;
+
+    const connectedUser = connectedUsers.find(
+      (peerSocketId) => peerSocketId === connectedUserSocketId
+    );
+
+    if (connectedUser) {
+      io.to(connectedUserSocketId).emit("user-hanged-up");
     }
   });
 

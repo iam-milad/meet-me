@@ -17,6 +17,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { dialogTypes } from "../lib/socket/constants.js";
 import { setDialog } from "../store/callSlice";
 
+import * as webRTCHandler from "../lib/socket/webRTCHandler.js";
+
 export function CallingDialog() {
   const dialog = useSelector((state) => state.call.dialog);
   const dispatch = useDispatch();
@@ -27,8 +29,19 @@ export function CallingDialog() {
         show: false,
         type: null,
         title: null,
+        description: null,
       })
     );
+  };
+
+  const acceptCallHandler = () => {
+    webRTCHandler.acceptCallHandler();
+    closeDialog();
+  };
+
+  const rejectCallHandler = () => {
+    webRTCHandler.rejectCallHandler();
+    closeDialog();
   };
 
   return (
@@ -45,37 +58,46 @@ export function CallingDialog() {
             <AvatarImage src="https://github.com/shadcn.png" />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
-          <span className="mt-2 font-semibold text-2xl text-gray-500 tracking-widest">
-            Milad Nouri
-          </span>
+          {dialog.type !== dialogTypes.CALLER_REJECTION_DIALOG ? (
+            <span className="mt-2 font-semibold text-2xl text-gray-500 tracking-widest">
+              Milad Nouri
+            </span>
+          ) : (
+            <span className="mt-2 font-semibold text-gray-500 tracking-widest">
+              {dialog.description}
+            </span>
+          )}
         </div>
 
-        {dialog.type === dialogTypes.CALLEE_DIALOG ? (
-          <DialogFooter className="!justify-center">
-            <Button
-              className="bg-blue-500 text-white hover:bg-blue-600 hover:text-white cursor-pointer"
-              variant="outline"
-            >
-              <MdCall /> Accept
-            </Button>
+        {dialog.type !== dialogTypes.CALLER_REJECTION_DIALOG &&
+          (dialog.type === dialogTypes.CALLEE_DIALOG ? (
+            <DialogFooter className="!justify-center">
+              <Button
+                className="bg-blue-500 text-white hover:bg-blue-600 hover:text-white cursor-pointer"
+                variant="outline"
+                onClick={acceptCallHandler}
+              >
+                <MdCall /> Accept
+              </Button>
 
-            <Button
-              className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
-              variant="outline"
-            >
-              <MdCallEnd /> Reject
-            </Button>
-          </DialogFooter>
-        ) : (
-          <DialogFooter className="!justify-center">
-            <Button
-              className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
-              variant="outline"
-            >
-              <FaVideo /> Cancel Call
-            </Button>
-          </DialogFooter>
-        )}
+              <Button
+                className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
+                variant="outline"
+                onClick={rejectCallHandler}
+              >
+                <MdCallEnd /> Reject
+              </Button>
+            </DialogFooter>
+          ) : (
+            <DialogFooter className="!justify-center">
+              <Button
+                className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
+                variant="outline"
+              >
+                <FaVideo /> Cancel Call
+              </Button>
+            </DialogFooter>
+          ))}
       </DialogContent>
     </Dialog>
   );

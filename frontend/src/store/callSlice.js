@@ -8,10 +8,12 @@ const initialState = {
   screenSharingActive: false,
   screenSharingStream: null,
   callState: callState.CALL_AVAILABLE_ONLY_CHAT,
+  connectedUserDetails: null,
   dialog: {
     show: false,
     type: null,
-    title: null
+    title: null,
+    description: null
   },
 };
 
@@ -37,6 +39,9 @@ const callSlice = createSlice({
     setCallState: (state, action) => {
       state.callState = action.payload;
     },
+    setConnectedUserDetails: (state, action) => {
+      state.connectedUserDetails = action.payload;
+    },
     setDialog: (state, action) => {
       state.dialog = action.payload;
     }
@@ -51,6 +56,7 @@ export const {
   setScreenSharingStream,
   setCallState,
   setAllowConnectionsFromStrangers,
+  setConnectedUserDetails,
   setDialog
 } = callSlice.actions;
 

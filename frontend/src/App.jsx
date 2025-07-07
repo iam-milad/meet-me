@@ -12,10 +12,11 @@ const router = createBrowserRouter([
     path: "/",
     // element: <RootLayout />,
     children: [
-      { index: true, element: <HomePage /> }, // index: true is alternative to path: ""
+      { index: true, element: <HomePage /> },
     ],
   },
 ]);
+
 
 function App() {
   return (

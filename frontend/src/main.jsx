@@ -7,11 +7,11 @@ import App from "./App.jsx";
 import store from "./store/index";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
+  // <StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Provider store={store}>
         <App />
       </Provider>
     </ThemeProvider>
-  </StrictMode>
+  // </StrictMode>
 );
