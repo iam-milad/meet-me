@@ -19,7 +19,7 @@ import { setDialog } from "../store/callSlice";
 
 import * as webRTCHandler from "../lib/socket/webRTCHandler.js";
 
-export function CallingDialog() {
+const CallingDialog = () => {
   const dialog = useSelector((state) => state.call.dialog);
   const dispatch = useDispatch();
 
@@ -102,3 +102,5 @@ export function CallingDialog() {
     </Dialog>
   );
 }
+
+export default CallingDialog;
