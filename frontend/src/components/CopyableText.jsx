@@ -12,7 +12,7 @@ const CopyableText = ({ text }) => {
 
   return (
     <div className="w-full flex justify-center">
-      <div className="w-[300px] bg-blue-500 text-white flex justify-between p-3 rounded-b-xl z-20">
+      <div className="w-[300px] bg-blue-500 text-white flex justify-around p-3 rounded-b-xl z-20">
         <span className="truncate">{text}</span>
         <button
           onClick={copyTextHandler}

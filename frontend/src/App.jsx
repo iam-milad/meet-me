@@ -1,16 +1,15 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import CallPage from "./pages/CallPage";
 import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/LoginPage";
-import Register from "./pages/RegisterPage";
-import { ModeToggle } from "./components/mode-toggle";
-// import RootLayout from "./pages/RootLayout";
+import JoinMeetingPage from "./pages/JoinMeetingPage";
+import HostMeetingPage from "./pages/HostMeetingPage";
 
 const router = createBrowserRouter([
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <Register /> },
+  { path: "/call", element: <CallPage /> },
+  { path: "/join-meeting", element: <JoinMeetingPage /> },
+  { path: "/host-meeting", element: <HostMeetingPage /> },
   {
     path: "/",
-    // element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
     ],

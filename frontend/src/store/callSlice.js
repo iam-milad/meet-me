@@ -2,6 +2,12 @@ import { createSlice } from "@reduxjs/toolkit";
 import { callState } from "../lib/socket/constants";
 
 const initialState = {
+  callInitiator: {
+    isHost: false,
+    participantName: null,
+    onlyAudio: false,
+    personalCode: null
+  },
   socketId: null,
   localStream: null,
   remoteStream: null,
@@ -21,6 +27,9 @@ const callSlice = createSlice({
   name: "call",
   initialState,
   reducers: {
+    setCallInitiator: (state, action) => {
+      state.callInitiator = action.payload;
+    },
     setSocketId: (state, action) => {
       state.socketId = action.payload;
     },
@@ -49,6 +58,7 @@ const callSlice = createSlice({
 });
 
 export const {
+  setCallInitiator,
   setSocketId,
   setLocalStream,
   setRemoteStream,

@@ -10,7 +10,10 @@ let socketIO;
 // };
 
 export const registerSocketEvents = (socket, dispatch) => {
-  socket.off("webRTC-signaling"); 
+  // socket.off("webRTC-signaling"); 
+  if (socket.connected) {
+    dispatch(setSocketId(socket.id));
+  }
   socket.on("connect", () => {
     socketIO = socket;
     webRTCHandler.setDispatch(dispatch);
@@ -50,6 +53,7 @@ export const registerSocketEvents = (socket, dispatch) => {
 };
 
 export const sendPreOffer = (data) => {
+  console.log("test", socketIO);
   socketIO.emit("pre-offer", data);
 };
 

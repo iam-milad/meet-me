@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import ChatMessage from "./ChatMessage";
 
-const Drawer = ({ children }) => {
+const ChatDrawer = ({ children }) => {
   const messages = [
     { text: "Hi there!", isSender: false },
     { text: "Hey, How are you?", isSender: true },
@@ -59,4 +59,4 @@ const Drawer = ({ children }) => {
   );
 };
 
-export default Drawer;
+export default ChatDrawer;
