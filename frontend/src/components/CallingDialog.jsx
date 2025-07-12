@@ -46,9 +46,9 @@ const CallingDialog = () => {
 
   return (
     <Dialog open={dialog.show} onOpenChange={closeDialog}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] py-12">
         <DialogHeader>
-          <DialogTitle className="flex justify-center">
+          <DialogTitle className="flex justify-center text-gray-600 text-2xl tracking-wider">
             {dialog.title}
           </DialogTitle>
         </DialogHeader>
@@ -59,11 +59,11 @@ const CallingDialog = () => {
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           {dialog.type !== dialogTypes.CALLER_REJECTION_DIALOG ? (
-            <span className="mt-2 font-semibold text-2xl text-gray-500 tracking-widest">
+            <span className="mt-3 mb-9 font-semibold text-2xl text-gray-500 tracking-wider">
               Milad Nouri
             </span>
           ) : (
-            <span className="mt-2 font-semibold text-gray-500 tracking-widest">
+            <span className="mt-6 font-semibold text-gray-500 tracking-widest">
               {dialog.description}
             </span>
           )}
@@ -91,8 +91,7 @@ const CallingDialog = () => {
           ) : (
             <DialogFooter className="!justify-center">
               <Button
-                className="bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
-                variant="outline"
+                className="w-[200px] mx-auto bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer"
               >
                 <FaVideo /> Cancel Call
               </Button>

@@ -1,6 +1,5 @@
 import * as wss from "./wss";
 import * as constants from "./constants";
-import store from "../../store";
 import { setDialog, setCallState, setScreenSharingActive, setScreenSharingStream } from "../../store/callSlice";
 
 let connectedUserDetails;
@@ -28,7 +27,6 @@ export const setDispatch = (dispatch) => {
 };
 
 const createPeerConnection = () => {
-  console.log("createPeerConnection called");
   peerConnection = new RTCPeerConnection(configuration);
 
   peerConnection.onicecandidate = (event) => {
@@ -274,9 +272,9 @@ export const handleConnectedUserHangedUp = () => {
 //     peerConnection = null;
 //   }
   
-  // connectedUserDetails = null;
-  // remoteDescriptionSet = false;
-  // pendingCandidates = [];
+//   connectedUserDetails = null;
+//   remoteDescriptionSet = false;
+//   pendingCandidates = [];
 // };
 
 const setIncomingCallsAvailable = () => {
@@ -291,14 +289,6 @@ const closePeerConnectionAndResetState = () => {
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
-  }
-
-  // active mic and camera
-  if (
-    connectedUserDetails.callType === constants.callType.VIDEO_PERSONAL_CODE
-  ) {
-    localStream.getVideoTracks()[0].enabled = true;
-    localStream.getAudioTracks()[0].enabled = true;
   }
 
   // update ui as well

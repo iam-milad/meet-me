@@ -1,32 +1,29 @@
-import { setSocketId } from "../../store/callSlice";
 import * as webRTCHandler from "./webRTCHandler";
 import * as constants from "./constants";
 
 let socketIO;
-// let dispatchRef;
 
-// export const setDispatch = (dispatch) => {
-//   dispatchRef = dispatch;
-// };
-
-export const registerSocketEvents = (socket, dispatch) => {
-  // socket.off("webRTC-signaling"); 
-  if (socket.connected) {
-    dispatch(setSocketId(socket.id));
-  }
-  socket.on("connect", () => {
-    socketIO = socket;
-    webRTCHandler.setDispatch(dispatch);
-
-    dispatch(setSocketId(socket.id));
+export const registerSocketEvents = (socket) => {
+  return new Promise((resolve) => {
+    if (socket.connected) {
+      setup(socket);
+      resolve(socket);
+    } else {
+      socket.on("connect", () => {
+        setup(socket);
+        resolve(socket);
+      });
+    }
   });
+};
 
+function setup(socket) {
+  socketIO = socket;
   socket.on("pre-offer", (data) => {
     webRTCHandler.handlePreOffer(data);
   });
 
   socket.on("pre-offer-answer", (data) => {
-    console.log("the issue is here", data);
     webRTCHandler.handlePreOfferAnswer(data);
   });
 
@@ -35,7 +32,7 @@ export const registerSocketEvents = (socket, dispatch) => {
   });
 
   socket.on("webRTC-signaling", (data) => {
-    console.log("socket.on('webRTC-signaling' () => {}) is called", data.type);
+    console.log("socket.on('webRTC-signaling') called", data.type);
     switch (data.type) {
       case constants.webRTCSignaling.OFFER:
         webRTCHandler.handleWebRTCOffer(data);
@@ -50,10 +47,9 @@ export const registerSocketEvents = (socket, dispatch) => {
         return;
     }
   });
-};
+}
 
 export const sendPreOffer = (data) => {
-  console.log("test", socketIO);
   socketIO.emit("pre-offer", data);
 };
 
