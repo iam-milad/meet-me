@@ -153,7 +153,7 @@ const HomePage = () => {
             type="button"
             className="flex-1 truncate cursor-pointer"
             onClick={() =>
-              sendPreOfferHandler(constants.callType.CHAT_PERSONAL_CODE)
+              sendPreOfferHandler(constants.callType.AUDIO_PERSONAL_CODE)
             }
           >
             <IoIosChatbubbles /> Chat

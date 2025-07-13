@@ -5,15 +5,11 @@ const initialState = {
   callInitiator: {
     isHost: false,
     participantName: null,
-    onlyAudio: false,
     personalCode: null
   },
   socketId: null,
-  localStream: null,
-  remoteStream: null,
   screenSharingActive: false,
-  screenSharingStream: null,
-  callState: callState.CALL_AVAILABLE_ONLY_CHAT,
+  callState: callState.CALL_AVAILABLE_ONLY_AUDIO,
   connectedUserDetails: null,
   dialog: {
     show: false,
@@ -33,17 +29,8 @@ const callSlice = createSlice({
     setSocketId: (state, action) => {
       state.socketId = action.payload;
     },
-    setLocalStream: (state, action) => {
-      state.localStream = action.payload;
-    },
-    setRemoteStream: (state, action) => {
-      state.remoteStream = action.payload;
-    },
     setScreenSharingActive: (state, action) => {
       state.screenSharingActive = action.payload;
-    },
-    setScreenSharingStream: (state, action) => {
-      state.screenSharingStream = action.payload;
     },
     setCallState: (state, action) => {
       state.callState = action.payload;

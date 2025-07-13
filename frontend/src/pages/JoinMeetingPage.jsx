@@ -6,7 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useDispatch } from "react-redux";
-import { setCallInitiator } from "../store/callSlice";
+import { setCallInitiator, setCallState } from "../store/callSlice";
+import * as constants from "../lib/socket/constants";
 
 const lettersOnlyRegex = /^[A-Za-z\s]+$/;
 
@@ -48,9 +49,11 @@ const JoinMeetingPage = () => {
     dispatch(setCallInitiator({
       isHost: false,
       participantName: name,
-      onlyAudio,
       personalCode
     }));
+
+    const callState =  onlyAudio ? constants.callState.CALL_AVAILABLE_ONLY_AUDIO : constants.callState.CALL_AVAILABLE;
+    dispatch(setCallState(callState));
   
     navigate("/call");
   };

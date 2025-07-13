@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -27,26 +27,38 @@ import { io } from "socket.io-client";
 import { registerSocketEvents } from "../lib/socket/wss.js";
 import * as webRTCHandler from "../lib/socket/webRTCHandler.js";
 import * as constants from "../lib/socket/constants.js";
+import {
+  startRecording,
+  stopRecording,
+  resumeRecording,
+  pauseRecording,
+} from "../lib/recordingUtils.js";
 
 import { setDialog, setSocketId } from "../store/callSlice";
-
-const defaultConstraints = {
-  audio: false,
-  video: true,
-};
 
 const CallPage = () => {
   const [isMicActive, setIsMicActive] = useState(true);
   const [isCameraActive, setIsCameraActive] = useState(true);
-  const [isRecording, setIsRecording] = useState(true);
+  const [recording, setRecording] = useState({
+    isActive: false,
+    state: constants.recordingState.STOPPED
+  });
   const [showImojiesPicker, setShowEmojiesPicker] = useState(false);
   const [localStream, setLocalStream] = useState("");
-  
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const socketId = useSelector((state) => state.call.socketId);
   const callInitiator = useSelector((state) => state.call.callInitiator);
-  const screenSharingActive = useSelector((state) => state.call.screenSharingActive);
+  const callState = useSelector((state) => state.call.callState);
+  const screenSharingActive = useSelector(
+    (state) => state.call.screenSharingActive
+  );
+
+  const defaultConstraints = useMemo(() => ({
+    audio: callState === constants.callState.CALL_AVAILABLE_ONLY_AUDIO,
+    video: callState !== constants.callState.CALL_AVAILABLE_ONLY_AUDIO && callState !== constants.callState.CALL_UNAVAILABLE,
+  }), [callState]);
 
   useEffect(() => {
     const socket = io("http://localhost:8080");
@@ -74,13 +86,12 @@ const CallPage = () => {
         webRTCHandler.setLocalStream(activeStream);
 
         if (!callInitiator.isHost) {
-
-          if(!callInitiator.personalCode) {
+          if (!callInitiator.personalCode) {
             return navigate("/");
           }
 
-          const callType = callInitiator.onlyAudio
-            ? constants.callType.CHAT_PERSONAL_CODE
+          const callType = callState === constants.callState.CALL_AVAILABLE_ONLY_AUDIO
+            ? constants.callType.AUDIO_PERSONAL_CODE
             : constants.callType.VIDEO_PERSONAL_CODE;
 
           dispatch(
@@ -91,8 +102,6 @@ const CallPage = () => {
               description: null,
             })
           );
-
-          console.log("before send");
 
           webRTCHandler.sendPreOffer(callType, callInitiator.personalCode);
         }
@@ -111,10 +120,11 @@ const CallPage = () => {
   }, [
     callInitiator.isHost,
     callInitiator.personalCode,
-    callInitiator.onlyAudio,
     navigate,
     socketId,
-    dispatch
+    dispatch,
+    callState,
+    defaultConstraints
   ]);
 
   const toggleMic = () => {
@@ -129,8 +139,36 @@ const CallPage = () => {
     webRTCHandler.switchBetweenCameraAndScreenSharing(screenSharingActive);
   };
 
-  const toggleRecording = () => {
-    setIsRecording((prev) => !prev);
+  const handleRecordingStartStop = () => {
+    if (!recording.isActive) {
+      setRecording({
+        isActive: true,
+        state: constants.recordingState.RECORDING
+      });
+      startRecording();
+    } else {
+      setRecording({
+        isActive: false,
+        state: constants.recordingState.STOPPED
+      });
+      stopRecording();
+    }
+  };
+
+  const handleRecordingPauseResume = () => {
+    if (recording.isActive && recording.state === constants.recordingState.RECORDING) {
+      setRecording({
+        isActive: true,
+        state: constants.recordingState.PAUSED
+      });
+      pauseRecording();
+    } else {
+      setRecording({
+        isActive: true,
+        state: constants.recordingState.RESUMED
+      });
+      resumeRecording();
+    }
   };
 
   const showEmojiesPickerHandler = () => {
@@ -144,7 +182,7 @@ const CallPage = () => {
 
   const hangUpHandler = () => {
     webRTCHandler.handleHangUp();
-  }
+  };
 
   return (
     <main className="h-screen">
@@ -152,10 +190,10 @@ const CallPage = () => {
       <section className="relative w-full h-screen">
         <CopyableText text={socketId} />
 
-        <Button className="w-[160px] bg-transpatent text-white flex justify-around items-center py-5 border-1 rounded-xl absolute right-3 md:right-12 top-16 z-20 hover:bg-blue-500 cursor-pointer">
-          <FaPlay />
-          <span>Stop Recording</span>
-        </Button>
+        {recording.isActive && <Button onClick={handleRecordingPauseResume} className="w-[160px] bg-transpatent text-white flex justify-around items-center py-5 border-1 rounded-xl absolute right-3 md:right-12 top-16 z-20 hover:bg-blue-500 cursor-pointer">
+          { recording.state === constants.recordingState.PAUSED  ? <FaPlay /> : <FaPause />}
+          <span>{recording.state === constants.recordingState.PAUSED ? "Start Recording" : "Stop Recording"}</span>
+        </Button>}
 
         <RemoteVideoPreview />
         <LocalVideoPreview stream={localStream} />
@@ -174,7 +212,10 @@ const CallPage = () => {
               ActiveIcon={BiCamera}
               InactiveIcon={BiCameraOff}
             />
-            <button onClick={hangUpHandler} className="w-[75px] h-[75px] rounded-[75px] bg-[#fc5d5b] transition duration-300 flex justify-center items-center cursor-pointer">
+            <button
+              onClick={hangUpHandler}
+              className="w-[75px] h-[75px] rounded-[75px] bg-[#fc5d5b] transition duration-300 flex justify-center items-center cursor-pointer"
+            >
               <MdCallEnd size={30} className="text-white" />
             </button>
             <ToggleIconButton
@@ -184,10 +225,10 @@ const CallPage = () => {
               ActiveIcon={LuScreenShareOff}
             />
             <ToggleIconButton
-              isActive={isRecording}
-              onClick={toggleRecording}
-              ActiveIcon={BsRecordCircle}
-              InactiveIcon={BsStopCircleFill}
+              isActive={recording.isActive}
+              onClick={handleRecordingStartStop}
+              InactiveIcon={BsRecordCircle}
+              ActiveIcon={BsStopCircleFill}
               iconClassName="text-red-500"
             />
           </div>

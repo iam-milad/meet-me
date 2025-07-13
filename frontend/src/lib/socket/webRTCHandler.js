@@ -1,11 +1,11 @@
 import * as wss from "./wss";
 import * as constants from "./constants";
-import { setDialog, setCallState, setScreenSharingActive, setScreenSharingStream } from "../../store/callSlice";
+import MediaStreamManager from "../MediaStreamManager";
+import { setDialog, setCallState, setScreenSharingActive } from "../../store/callSlice";
 
 let connectedUserDetails;
 let peerConnection;
 let dispatchRef;
-let localStream;
 
 let remoteDescriptionSet = false;
 let pendingCandidates = [];
@@ -19,7 +19,7 @@ const configuration = {
 };
 
 export const setLocalStream = (stream) => {
-  localStream = stream;
+  MediaStreamManager.setLocalStream(stream);
 };
 
 export const setDispatch = (dispatch) => {
@@ -51,11 +51,14 @@ const createPeerConnection = () => {
   const remoteVideo = document.getElementById("remote_video");
   remoteVideo.srcObject = remoteStream;
 
+  MediaStreamManager.setRemoteStream(remoteStream);
+
   peerConnection.ontrack = (event) => {
     remoteStream.addTrack(event.track);
   };
 
   // add our stream to peer connection
+  const localStream = MediaStreamManager.getLocalStream();
   if (
     connectedUserDetails.callType === constants.callType.VIDEO_PERSONAL_CODE
   ) {
@@ -71,44 +74,41 @@ export const sendPreOffer = (callType, calleePersonalCode) => {
     socketId: calleePersonalCode,
   }
 
-  if (
-    callType === constants.callType.CHAT_PERSONAL_CODE ||
-    callType === constants.callType.VIDEO_PERSONAL_CODE
-  ){
-    const data = {
-      callType,
-      calleePersonalCode,
-    };
-  
-    wss.sendPreOffer(data);
-  }
+  const data = {
+    callType,
+    calleePersonalCode,
+  };
+
+  wss.sendPreOffer(data);
 };
 
-export const handlePreOffer = (data) => {
-  const { callType, callerSocketId } = data;
-
+export const handlePreOffer = ({ callType, callerSocketId }) => {
   connectedUserDetails = {
     socketId: callerSocketId,
     callType,
-  }
+  };
 
-  if (
-    callType === constants.callType.CHAT_PERSONAL_CODE ||
-    callType === constants.callType.VIDEO_PERSONAL_CODE
-  ) {
-    dispatchRef(
-      setDialog({
-        show: true,
-        type: constants.dialogTypes.CALLEE_DIALOG,
-        title:
-          callType === constants.callType.CHAT_PERSONAL_CODE
-            ? "Incoming Chat Call"
-            : "Incoming Video Call",
-        description: null,
-      })
-    );
-  }
+  const isSupportedCallType =
+    callType === constants.callType.AUDIO_PERSONAL_CODE ||
+    callType === constants.callType.VIDEO_PERSONAL_CODE;
+
+  if (!isSupportedCallType) return;
+
+  const title =
+    callType === constants.callType.AUDIO_PERSONAL_CODE
+      ? "Incoming Chat Call"
+      : "Incoming Audio Call";
+
+  dispatchRef(
+    setDialog({
+      show: true,
+      type: constants.dialogTypes.CALLEE_DIALOG,
+      title,
+      description: null,
+    })
+  );
 };
+
 
 const sendPreOfferAnswer = (preOfferAnswer, callerSocketId = null) => {
   const socketId = callerSocketId || connectedUserDetails.socketId;
@@ -125,8 +125,8 @@ export const acceptCallHandler = () => {
   sendPreOfferAnswer(constants.preOfferAnswer.CALL_ACCEPTED);
 
   const callType = connectedUserDetails.callType;
-  if (callType === constants.callType.CHAT_PERSONAL_CODE) {
-    dispatchRef(setCallState(constants.callState.CALL_AVAILABLE_ONLY_CHAT));
+  if (callType === constants.callType.AUDIO_PERSONAL_CODE) {
+    dispatchRef(setCallState(constants.callState.CALL_AVAILABLE_ONLY_AUDIO));
   }
 
   if (callType === constants.callType.VIDEO_PERSONAL_CODE) {
@@ -136,10 +136,6 @@ export const acceptCallHandler = () => {
 
 export const rejectCallHandler = () => {
   sendPreOfferAnswer(constants.preOfferAnswer.CALL_REJECTED);
-};
-
-const callingDialogRejectCallHandler = () => {
-  console.log("Rejecting the call");
 };
 
 const showAndCloseDialog = (dialogInfo) => {
@@ -207,7 +203,6 @@ export const handlePreOfferAnswer = (data) => {
 };
 
 const sendWebRTCOffer = async () => {
-  console.log("sendWebRTCOffer is called");
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
   wss.sendDataUsingWebRTCSignaling({
@@ -218,8 +213,6 @@ const sendWebRTCOffer = async () => {
 };
 
 export const handleWebRTCOffer = async (data) => {
-  console.log("handleWebRTCOffer is called");
-
   await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
   remoteDescriptionSet = true;
 
@@ -278,10 +271,11 @@ export const handleConnectedUserHangedUp = () => {
 // };
 
 const setIncomingCallsAvailable = () => {
+  const localStream = MediaStreamManager.getLocalStream();
   if (localStream) {
     dispatchRef(setCallState(constants.callState.CALL_AVAILABLE));
   } else {
-    dispatchRef(setCallState(constants.callState.CALL_AVAILABLE_ONLY_CHAT));
+    dispatchRef(setCallState(constants.callState.CALL_AVAILABLE_ONLY_AUDIO));
   }
 };
 
@@ -291,7 +285,6 @@ const closePeerConnectionAndResetState = () => {
     peerConnection = null;
   }
 
-  // update ui as well
   setIncomingCallsAvailable();
   connectedUserDetails = null;
   remoteDescriptionSet = false;
@@ -324,6 +317,7 @@ export const switchBetweenCameraAndScreenSharing = async (
   if (screenSharingActive) {
     const senders = peerConnection.getSenders();
 
+    const localStream = MediaStreamManager.getLocalStream();
     const sender = senders.find((sender) => {
       return sender.track.kind === localStream.getVideoTracks()[0].kind;
     });
@@ -344,7 +338,6 @@ export const switchBetweenCameraAndScreenSharing = async (
       screenSharingStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
-      dispatchRef(setScreenSharingStream(screenSharingStream));
 
       // replace track which sender is sending
       const senders = peerConnection.getSenders();
@@ -370,3 +363,9 @@ export const switchBetweenCameraAndScreenSharing = async (
     }
   }
 };
+
+export const toggleMic = () => {
+  const localStream = MediaStreamManager.getLocalStream();
+  const micEnabled = localStream.getAudioTracks()[0].enabled;
+  localStream.getAudioTracks()[0].enabled = !micEnabled;
+}
