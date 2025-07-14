@@ -47,10 +47,7 @@ const callSlice = createSlice({
 export const {
   setCallInitiator,
   setSocketId,
-  setLocalStream,
-  setRemoteStream,
   setScreenSharingActive,
-  setScreenSharingStream,
   setCallState,
   setAllowConnectionsFromStrangers,
   setConnectedUserDetails,
