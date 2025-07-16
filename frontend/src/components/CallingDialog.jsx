@@ -69,7 +69,7 @@ const CallingDialog = () => {
           )}
         </div>
 
-        {dialog.type !== dialogTypes.CALLER_REJECTION_DIALOG &&
+        {dialog.show && dialog.type !== dialogTypes.CALLER_REJECTION_DIALOG &&
           (dialog.type === dialogTypes.CALLEE_DIALOG ? (
             <DialogFooter className="!justify-center">
               <Button

@@ -64,7 +64,7 @@ const JoinMeetingPage = () => {
       <Card className="w-[450px] md:w-[400px]">
         <CardHeader>
           <CardTitle className="mt-4 text-lg">
-            Host a meeting {onlyAudio}
+            Join a meeting {onlyAudio}
           </CardTitle>
         </CardHeader>
         <CardContent>

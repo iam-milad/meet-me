@@ -21,8 +21,6 @@ export const LocalVideoPreview = ({ stream }) => {
         ref={videoRef}
         onLoadedMetadata={handleLoadedMetadata}
         autoPlay
-        muted
-        playsInline
       />
     </div>
   );

@@ -47,6 +47,10 @@ function setup(socket) {
         return;
     }
   });
+
+  socket.on("peer-disconnected", () => {
+    webRTCHandler.handleConnectedUserHangedUp();
+  });
 }
 
 export const sendPreOffer = (data) => {
@@ -58,10 +62,13 @@ export const sendPreOfferAnswer = (data) => {
 };
 
 export const sendDataUsingWebRTCSignaling = (data) => {
-  console.log("sendDataUsingWebRTCSignaling is called", data);
   socketIO.emit("webRTC-signaling", data);
 };
 
 export const sendUserHangedUp = (data) => {
   socketIO.emit("user-hanged-up", data);
+};
+
+export const disconnected = () => {
+  socketIO.disconnect();
 };

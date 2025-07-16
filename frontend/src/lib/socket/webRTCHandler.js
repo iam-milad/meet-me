@@ -1,12 +1,13 @@
 import * as wss from "./wss";
 import * as constants from "./constants";
 import MediaStreamManager from "../MediaStreamManager";
-import { setDialog, setCallState, setScreenSharingActive } from "../../store/callSlice";
+import { setDialog, setCallState, setScreenSharingActive, setPeerConnected } from "../../store/callSlice";
 
+let incomingCallAudio;
+let screenSharingStream;
 let connectedUserDetails;
 let peerConnection;
 let dispatchRef;
-
 let remoteDescriptionSet = false;
 let pendingCandidates = [];
 
@@ -16,10 +17,6 @@ const configuration = {
       urls: "stun:stun.l.google.com:13902",
     },
   ],
-};
-
-export const setLocalStream = (stream) => {
-  MediaStreamManager.setLocalStream(stream);
 };
 
 export const setDispatch = (dispatch) => {
@@ -39,11 +36,6 @@ const createPeerConnection = () => {
       });
     }
   };
-
-  // peerConnection.onconnectionstatechange = (event) => {
-  //   if (peerConnection.connectionState === "connected") {
-  //   }
-  // };
 
   // receiving tracks
   const remoteStream = new MediaStream();
@@ -66,6 +58,8 @@ const createPeerConnection = () => {
       peerConnection.addTrack(track, localStream);
     }
   }
+
+  dispatchRef(setPeerConnected(true));
 };
 
 export const sendPreOffer = (callType, calleePersonalCode) => {
@@ -80,6 +74,22 @@ export const sendPreOffer = (callType, calleePersonalCode) => {
   };
 
   wss.sendPreOffer(data);
+};
+
+const playIncomingCallSound = () => {
+  incomingCallAudio = new Audio('/sounds/incoming_call.mp3');
+  incomingCallAudio.loop = true; 
+  incomingCallAudio.play().catch(err => console.error('Error playing sound:', err));
+  
+  return incomingCallAudio;
+};
+
+const stopIncomingCallSound = () => {
+  if (incomingCallAudio) {
+    incomingCallAudio.pause();
+    incomingCallAudio.currentTime = 0;
+    incomingCallAudio = null;
+  }
 };
 
 export const handlePreOffer = ({ callType, callerSocketId }) => {
@@ -107,6 +117,8 @@ export const handlePreOffer = ({ callType, callerSocketId }) => {
       description: null,
     })
   );
+
+  playIncomingCallSound();
 };
 
 
@@ -121,6 +133,7 @@ const sendPreOfferAnswer = (preOfferAnswer, callerSocketId = null) => {
 };
 
 export const acceptCallHandler = () => {
+  stopIncomingCallSound();
   createPeerConnection();
   sendPreOfferAnswer(constants.preOfferAnswer.CALL_ACCEPTED);
 
@@ -135,6 +148,7 @@ export const acceptCallHandler = () => {
 };
 
 export const rejectCallHandler = () => {
+  stopIncomingCallSound();
   sendPreOfferAnswer(constants.preOfferAnswer.CALL_REJECTED);
 };
 
@@ -157,7 +171,7 @@ const showAndCloseDialog = (dialogInfo) => {
         description: null,
       })
     );
-  }, [4000]);
+  }, 4000);
 };
 
 export const handlePreOfferAnswer = (data) => {
@@ -234,8 +248,6 @@ export const handleWebRTCOffer = async (data) => {
   });
 };
 
-
-
 export const handleWebRTCAnswer = async (data) => {
   await peerConnection.setRemoteDescription(data.answer);
 };
@@ -259,45 +271,41 @@ export const handleConnectedUserHangedUp = () => {
   closePeerConnectionAndResetState();
 };
 
-// const closePeerConnectionAndResetState = () => {
-//   if (peerConnection) {
-//     peerConnection.close();
-//     peerConnection = null;
-//   }
-  
-//   connectedUserDetails = null;
-//   remoteDescriptionSet = false;
-//   pendingCandidates = [];
-// };
-
-const setIncomingCallsAvailable = () => {
-  const localStream = MediaStreamManager.getLocalStream();
-  if (localStream) {
-    dispatchRef(setCallState(constants.callState.CALL_AVAILABLE));
-  } else {
-    dispatchRef(setCallState(constants.callState.CALL_AVAILABLE_ONLY_AUDIO));
-  }
-};
-
-const closePeerConnectionAndResetState = () => {
+export const closePeerConnectionAndResetState = () => {
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
   }
 
-  setIncomingCallsAvailable();
+  // const localStream = MediaStreamManager.getLocalStream();
+  // if (
+  //   connectedUserDetails.callType === constants.callType.VIDEO_PERSONAL_CODE ||
+  //   connectedUserDetails.callType === constants.callType.VIDEO_STRANGER
+  // ) {
+  //   localStream.getVideoTracks()[0].enabled = true;
+  //   localStream.getAudioTracks()[0].enabled = true;
+  // }
+
   connectedUserDetails = null;
   remoteDescriptionSet = false;
   pendingCandidates = [];
+
+  const remoteVideo = document.getElementById("remote_video");
+  remoteVideo.srcObject = null;
+
+  dispatchRef(setPeerConnected(false));
 };
 
 export const handleHangUp = () => {
-  const data = {
-    connectedUserSocketId: connectedUserDetails.socketId,
-  };
-
-  wss.sendUserHangedUp(data);
+  if(connectedUserDetails) {
+    const data = {
+      connectedUserSocketId: connectedUserDetails.socketId,
+    };
+  
+    wss.sendUserHangedUp(data);
+  }
   closePeerConnectionAndResetState();
+  wss.disconnected();
 };
 
 const updateLocalVideo = (stream) => {
@@ -309,15 +317,14 @@ const updateLocalVideo = (stream) => {
   });
 };
 
-let screenSharingStream;
-
 export const switchBetweenCameraAndScreenSharing = async (
   screenSharingActive
 ) => {
   if (screenSharingActive) {
+    // Switch back to camera
     const senders = peerConnection.getSenders();
-
     const localStream = MediaStreamManager.getLocalStream();
+
     const sender = senders.find((sender) => {
       return sender.track.kind === localStream.getVideoTracks()[0].kind;
     });
@@ -326,46 +333,58 @@ export const switchBetweenCameraAndScreenSharing = async (
       sender.replaceTrack(localStream.getVideoTracks()[0]);
     }
 
-    // stop screen sharing stream
-    screenSharingStream.getTracks()
-      .forEach((track) => track.stop());
-      
-    dispatchRef(setScreenSharingActive(!screenSharingActive));
+    // Stop screen sharing stream
+    if (screenSharingStream) {
+      screenSharingStream.getTracks().forEach((track) => track.stop());
+      screenSharingStream = null;
+    }
 
+    dispatchRef(setScreenSharingActive(false));
     updateLocalVideo(localStream);
+
   } else {
+    // Switch to screen sharing
     try {
       screenSharingStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
 
-      // replace track which sender is sending
-      const senders = peerConnection.getSenders();
+      // Detect if user clicks the browser's "Stop Sharing" button
+      const screenTrack = screenSharingStream.getVideoTracks()[0];
+      screenTrack.onended = () => {
+        switchBetweenCameraAndScreenSharing(true); // true = currently screen sharing
+      };
 
+      const senders = peerConnection.getSenders();
       const sender = senders.find((sender) => {
-        return (
-          sender.track.kind === screenSharingStream.getVideoTracks()[0].kind
-        );
+        return sender.track.kind === screenTrack.kind;
       });
 
       if (sender) {
-        sender.replaceTrack(screenSharingStream.getVideoTracks()[0]);
+        sender.replaceTrack(screenTrack);
       }
 
-      dispatchRef(setScreenSharingActive(!screenSharingActive));
-
+      dispatchRef(setScreenSharingActive(true));
       updateLocalVideo(screenSharingStream);
+
     } catch (err) {
       console.error(
-        "error occured when trying to get screen sharing stream",
+        "Error occurred when trying to get screen sharing stream",
         err
       );
     }
   }
 };
 
+
 export const toggleMic = () => {
   const localStream = MediaStreamManager.getLocalStream();
   const micEnabled = localStream.getAudioTracks()[0].enabled;
   localStream.getAudioTracks()[0].enabled = !micEnabled;
+}
+
+export const toggleCamera = () => {
+  const localStream = MediaStreamManager.getLocalStream();
+  const cameraEnabled = localStream.getVideoTracks()[0].enabled;
+  localStream.getVideoTracks()[0].enabled = !cameraEnabled;
 }

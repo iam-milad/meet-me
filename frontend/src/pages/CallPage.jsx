@@ -33,6 +33,7 @@ import {
   resumeRecording,
   pauseRecording,
 } from "../lib/recordingUtils.js";
+import MediaStreamManager from "../lib/MediaStreamManager.js";
 
 import { setDialog, setSocketId } from "../store/callSlice";
 
@@ -44,19 +45,20 @@ const CallPage = () => {
     state: constants.recordingState.STOPPED
   });
   const [showImojiesPicker, setShowEmojiesPicker] = useState(false);
-  const [localStream, setLocalStream] = useState("");
+  const [localStream, setLocalStream] = useState(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const socketId = useSelector((state) => state.call.socketId);
   const callInitiator = useSelector((state) => state.call.callInitiator);
   const callState = useSelector((state) => state.call.callState);
+  const peerConnected = useSelector((state) => state.call.peerConnected);
   const screenSharingActive = useSelector(
     (state) => state.call.screenSharingActive
   );
 
   const defaultConstraints = useMemo(() => ({
-    audio: callState === constants.callState.CALL_AVAILABLE_ONLY_AUDIO,
+    audio: false,
     video: callState !== constants.callState.CALL_AVAILABLE_ONLY_AUDIO && callState !== constants.callState.CALL_UNAVAILABLE,
   }), [callState]);
 
@@ -70,6 +72,8 @@ const CallPage = () => {
     return () => {
       socket.off("pre-offer");
       socket.off("webRTC-signaling");
+      socket.off("user-hanged-up");
+      socket.off("pre-offer-answer");
     };
   }, [dispatch]);
 
@@ -83,13 +87,9 @@ const CallPage = () => {
           defaultConstraints
         );
         setLocalStream(activeStream);
-        webRTCHandler.setLocalStream(activeStream);
+        MediaStreamManager.setLocalStream(activeStream);
 
         if (!callInitiator.isHost) {
-          if (!callInitiator.personalCode) {
-            return navigate("/");
-          }
-
           const callType = callState === constants.callState.CALL_AVAILABLE_ONLY_AUDIO
             ? constants.callType.AUDIO_PERSONAL_CODE
             : constants.callType.VIDEO_PERSONAL_CODE;
@@ -128,10 +128,12 @@ const CallPage = () => {
   ]);
 
   const toggleMic = () => {
+    webRTCHandler.toggleMic();
     setIsMicActive((prev) => !prev);
   };
 
   const toggleCamera = () => {
+    webRTCHandler.toggleCamera();
     setIsCameraActive((prev) => !prev);
   };
 
@@ -176,12 +178,12 @@ const CallPage = () => {
   };
 
   const emojiClickHandler = (emoji) => {
-    console.log("emoji selected", emoji);
     setShowEmojiesPicker(false);
   };
 
   const hangUpHandler = () => {
     webRTCHandler.handleHangUp();
+    navigate("/");
   };
 
   return (
@@ -223,6 +225,7 @@ const CallPage = () => {
               onClick={toggleScreenSharing}
               InactiveIcon={LuScreenShare}
               ActiveIcon={LuScreenShareOff}
+              disabled={!peerConnected}
             />
             <ToggleIconButton
               isActive={recording.isActive}
@@ -230,6 +233,7 @@ const CallPage = () => {
               InactiveIcon={BsRecordCircle}
               ActiveIcon={BsStopCircleFill}
               iconClassName="text-red-500"
+              disabled={!peerConnected}
             />
           </div>
 

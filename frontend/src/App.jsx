@@ -3,19 +3,24 @@ import CallPage from "./pages/CallPage";
 import HomePage from "./pages/HomePage";
 import JoinMeetingPage from "./pages/JoinMeetingPage";
 import HostMeetingPage from "./pages/HostMeetingPage";
+import CallRouteGuard from "./components/CallRouteGuard";
 
 const router = createBrowserRouter([
-  { path: "/call", element: <CallPage /> },
+  {
+    path: "/call",
+    element: (
+      <CallRouteGuard>
+        <CallPage />
+      </CallRouteGuard>
+    ),
+  },
   { path: "/join-meeting", element: <JoinMeetingPage /> },
   { path: "/host-meeting", element: <HostMeetingPage /> },
   {
     path: "/",
-    children: [
-      { index: true, element: <HomePage /> },
-    ],
+    children: [{ index: true, element: <HomePage /> }],
   },
 ]);
-
 
 function App() {
   return (

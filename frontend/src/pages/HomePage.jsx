@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 const HomePage = () => {
   return (
     <div className="w-full h-screen bg-gray-100 flex justify-center items-center">
-      <Card className="w-[450px] md:w-[600px] px-16 py-20">
+      <Card className="w-[380px] md:w-[600px] px-16 py-20">
         <CardHeader>
           <div className="flex items-center justify-center h-full w-full">
             <img className="w-[200px] md:w-[300px]" src="images/logo.png"></img>

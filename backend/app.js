@@ -107,6 +107,8 @@ io.on("connection", (socket) => {
     });
 
     connectedUsers = newConnectedUsers;
+    
+    io.to(connectedUsers[connectedUsers.length - 1]).emit("peer-disconnected");
 
     console.log("new users after disconnection", connectedUsers);
   });

@@ -11,6 +11,7 @@ const initialState = {
   screenSharingActive: false,
   callState: callState.CALL_AVAILABLE_ONLY_AUDIO,
   connectedUserDetails: null,
+  peerConnected: false,
   dialog: {
     show: false,
     type: null,
@@ -38,6 +39,9 @@ const callSlice = createSlice({
     setConnectedUserDetails: (state, action) => {
       state.connectedUserDetails = action.payload;
     },
+    setPeerConnected: (state, action) => {
+      state.peerConnected = action.payload;
+    },
     setDialog: (state, action) => {
       state.dialog = action.payload;
     }
@@ -51,6 +55,7 @@ export const {
   setCallState,
   setAllowConnectionsFromStrangers,
   setConnectedUserDetails,
+  setPeerConnected,
   setDialog
 } = callSlice.actions;
 
