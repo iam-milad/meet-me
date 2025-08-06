@@ -12,10 +12,12 @@ const initialState = {
   callState: callState.CALL_AVAILABLE_ONLY_AUDIO,
   connectedUserDetails: null,
   peerConnected: false,
+  isRemoteCameraActive: true,
   dialog: {
     show: false,
     type: null,
     title: null,
+    callerName: null,
     description: null
   },
 };
@@ -42,6 +44,9 @@ const callSlice = createSlice({
     setPeerConnected: (state, action) => {
       state.peerConnected = action.payload;
     },
+    setIsRemoteCameraActive: (state, action) => {
+      state.isRemoteCameraActive = action.payload;
+    },
     setDialog: (state, action) => {
       state.dialog = action.payload;
     }
@@ -56,6 +61,7 @@ export const {
   setAllowConnectionsFromStrangers,
   setConnectedUserDetails,
   setPeerConnected,
+  setIsRemoteCameraActive,
   setDialog
 } = callSlice.actions;
 

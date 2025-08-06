@@ -19,7 +19,7 @@ const HostMeetingPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleJoin = () => {
+  const handleHostingMeeting = () => {
     if (!name.trim()) {
       setNameError("Name is required");
       return;
@@ -83,8 +83,8 @@ const HostMeetingPage = () => {
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <Button className="w-18" onClick={handleJoin}>
-              Join
+            <Button className="w-18" onClick={handleHostingMeeting}>
+              Host
             </Button>
             <Button variant="outline" className="text-gray-600 w-18" asChild>
               <Link to="/">Cancel</Link>

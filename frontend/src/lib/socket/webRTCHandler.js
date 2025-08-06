@@ -1,7 +1,7 @@
 import * as wss from "./wss";
 import * as constants from "./constants";
 import MediaStreamManager from "../MediaStreamManager";
-import { setDialog, setCallState, setScreenSharingActive, setPeerConnected } from "../../store/callSlice";
+import { setDialog, setCallState, setScreenSharingActive, setPeerConnected, setIsRemoteCameraActive } from "../../store/callSlice";
 
 let incomingCallAudio;
 let screenSharingStream;
@@ -62,15 +62,18 @@ const createPeerConnection = () => {
   dispatchRef(setPeerConnected(true));
 };
 
-export const sendPreOffer = (callType, calleePersonalCode) => {
+export const sendPreOffer = (callType, calleePersonalCode, callerName, isRemoteCameraActive) => {
   connectedUserDetails = {
     callType,
     socketId: calleePersonalCode,
+    callerName
   }
 
   const data = {
     callType,
     calleePersonalCode,
+    callerName,
+    isRemoteCameraActive
   };
 
   wss.sendPreOffer(data);
@@ -92,7 +95,7 @@ const stopIncomingCallSound = () => {
   }
 };
 
-export const handlePreOffer = ({ callType, callerSocketId }) => {
+export const handlePreOffer = ({ callType, callerSocketId, callerName, isRemoteCameraActive }) => {
   connectedUserDetails = {
     socketId: callerSocketId,
     callType,
@@ -114,9 +117,12 @@ export const handlePreOffer = ({ callType, callerSocketId }) => {
       show: true,
       type: constants.dialogTypes.CALLEE_DIALOG,
       title,
+      callerName,
       description: null,
     })
   );
+  
+  dispatchRef(setIsRemoteCameraActive(isRemoteCameraActive));
 
   playIncomingCallSound();
 };
@@ -387,4 +393,14 @@ export const toggleCamera = () => {
   const localStream = MediaStreamManager.getLocalStream();
   const cameraEnabled = localStream.getVideoTracks()[0].enabled;
   localStream.getVideoTracks()[0].enabled = !cameraEnabled;
+  if(connectedUserDetails?.socketId) {
+    wss.sendRemoteCameraToggleSignal({
+      connectedUserSocketId: connectedUserDetails.socketId,
+      isRemoteCameraActive: !cameraEnabled
+    });
+  }
+}
+
+export const handleRemoteCameraToggle = (isRemoteCameraActive) => {
+  dispatchRef(setIsRemoteCameraActive(isRemoteCameraActive));
 }

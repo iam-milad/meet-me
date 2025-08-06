@@ -20,6 +20,7 @@ export const registerSocketEvents = (socket) => {
 function setup(socket) {
   socketIO = socket;
   socket.on("pre-offer", (data) => {
+    console.log("tessst", data);
     webRTCHandler.handlePreOffer(data);
   });
 
@@ -48,6 +49,10 @@ function setup(socket) {
     }
   });
 
+  socket.on("remote-camera-toggle", (data) => {
+    webRTCHandler.handleRemoteCameraToggle(data);
+  });
+
   socket.on("peer-disconnected", () => {
     webRTCHandler.handleConnectedUserHangedUp();
   });
@@ -67,6 +72,10 @@ export const sendDataUsingWebRTCSignaling = (data) => {
 
 export const sendUserHangedUp = (data) => {
   socketIO.emit("user-hanged-up", data);
+};
+
+export const sendRemoteCameraToggleSignal = (isRemoteCameraActive) => {
+  socketIO.emit("remote-camera-toggle", isRemoteCameraActive);
 };
 
 export const disconnected = () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -40,6 +40,7 @@ import { setDialog, setSocketId } from "../store/callSlice";
 const CallPage = () => {
   const [isMicActive, setIsMicActive] = useState(true);
   const [isCameraActive, setIsCameraActive] = useState(true);
+  const isCameraActiveRef = useRef(isCameraActive);
   const [recording, setRecording] = useState({
     isActive: false,
     state: constants.recordingState.STOPPED
@@ -50,6 +51,7 @@ const CallPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const socketId = useSelector((state) => state.call.socketId);
+  const isRemoteCameraActive = useSelector((state) => state.call.isRemoteCameraActive);
   const callInitiator = useSelector((state) => state.call.callInitiator);
   const callState = useSelector((state) => state.call.callState);
   const peerConnected = useSelector((state) => state.call.peerConnected);
@@ -78,6 +80,10 @@ const CallPage = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    isCameraActiveRef.current = isCameraActive;
+  }, [isCameraActive]);
+
+  useEffect(() => {
     if (!socketId) return;
 
     let activeStream;
@@ -103,7 +109,7 @@ const CallPage = () => {
             })
           );
 
-          webRTCHandler.sendPreOffer(callType, callInitiator.personalCode);
+          webRTCHandler.sendPreOffer(callType, callInitiator.personalCode, callInitiator.participantName, isCameraActiveRef.current);
         }
       } catch (err) {
         console.error("Error accessing media devices:", err);
@@ -124,7 +130,8 @@ const CallPage = () => {
     socketId,
     dispatch,
     callState,
-    defaultConstraints
+    defaultConstraints,
+    callInitiator.participantName
   ]);
 
   const toggleMic = () => {
@@ -189,7 +196,7 @@ const CallPage = () => {
   return (
     <main className="h-screen">
       <CallingDialog />
-      <section className="relative w-full h-screen">
+      <section className="relative w-full h-screen bg-zinc-800">
         <CopyableText text={socketId} />
 
         {recording.isActive && <Button onClick={handleRecordingPauseResume} className="w-[160px] bg-transpatent text-white flex justify-around items-center py-5 border-1 rounded-xl absolute right-3 md:right-12 top-16 z-20 hover:bg-blue-500 cursor-pointer">
@@ -197,8 +204,8 @@ const CallPage = () => {
           <span>{recording.state === constants.recordingState.PAUSED ? "Start Recording" : "Stop Recording"}</span>
         </Button>}
 
-        <RemoteVideoPreview />
-        <LocalVideoPreview stream={localStream} />
+        <RemoteVideoPreview isRemoteCameraActive={isRemoteCameraActive} />
+        <LocalVideoPreview stream={localStream} isCameraActive={isCameraActive} participantName={callInitiator.participantName}/>
 
         <div className="flex justify-center">
           <div className="flex absolute w-[350px] md:w-[390px] h-[75px] bottom-[80px] md:bottom-[100px] justify-between items-center">

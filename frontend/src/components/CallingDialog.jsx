@@ -56,11 +56,11 @@ const CallingDialog = () => {
         <div className="flex flex-col justify-center items-center mt-6">
           <Avatar className="h-20 w-20">
             <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>{ dialog.callerName }</AvatarFallback>
           </Avatar>
           {dialog.type !== dialogTypes.CALLER_REJECTION_DIALOG ? (
             <span className="mt-3 mb-9 font-semibold text-2xl text-gray-500 tracking-wider">
-              Milad Nouri
+              {dialog.callerName}
             </span>
           ) : (
             <span className="mt-6 font-semibold text-gray-500 tracking-widest">

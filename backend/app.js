@@ -4,14 +4,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
-
-connectDB(); // Connect to MongoDB
 
 const app = express();
 import { Server } from "socket.io";
@@ -46,7 +43,7 @@ io.on("connection", (socket) => {
   connectedUsers.push(socket.id);
   console.log("Connected Users: ", connectedUsers);
 
-  socket.on("pre-offer", ({calleePersonalCode, callType}) => {
+  socket.on("pre-offer", ({calleePersonalCode, callType, callerName, isRemoteCameraActive}) => {
     const connectedUser = connectedUsers.find(
       (userSocketId) => userSocketId === calleePersonalCode
     );
@@ -55,6 +52,8 @@ io.on("connection", (socket) => {
       const data = {
         callerSocketId: socket.id,
         callType,
+        callerName,
+        isRemoteCameraActive
       };
       io.to(calleePersonalCode).emit("pre-offer", data);
     } else {
@@ -86,6 +85,18 @@ io.on("connection", (socket) => {
 
     if (connectedUser) {
       io.to(connectedUserSocketId).emit("webRTC-signaling", data);
+    }
+  });
+
+  socket.on("remote-camera-toggle", (data) => {
+    const { connectedUserSocketId, isRemoteCameraActive } = data;
+
+    const connectedUser = connectedUsers.find(
+      (peerSocketId) => peerSocketId === connectedUserSocketId
+    );
+
+    if (connectedUser) {
+      io.to(connectedUserSocketId).emit("remote-camera-toggle", isRemoteCameraActive);
     }
   });
 
